@@ -1,14 +1,18 @@
 # Q4*NL: Non-Linear 4-bit Block Quantization Formats
 
-This document specifies the **Q40NL** and **Q41NL** formats (“non-linear Q40/Q41”) and compares it to common baselines: **Q40 (linear)**, **Q80 (linear)**, **IQ4_NL (ggml/gguf)**, **NVFP4 (NVIDIA)**, **MXFP4 (OCP)**, and **NF4 (bitsandbytes/QLoRA)**. It also summarizes empirical results from a Torch test harness run.
+This document specifies the **Q40NL**, **Q41NL**, **Q42NL**, and **Q43NL** formats (“non-linear Q40/Q41”) and compares it to common baselines: **Q40 (linear)**, **Q80 (linear)**, **IQ4_NL (ggml/gguf)**, **NVFP4 (NVIDIA)**, **MXFP4 (OCP)**, and **NF4 (bitsandbytes/QLoRA)**. It also summarizes empirical results from a Torch test harness run.
 
 **Q40NL** is a **4.5 bits/weight** format with **non-linear decode**, designed to improve tail reconstruction while keeping the same storage as classic Q40/Q4_0 and IQ4_NL. **Q40NL** uses **4-bit signed symmetric codes** with a **per-block FP16 scale** and a non-linear decode function that allocates more resolution toward the tails. **Q40NL** is a **drop-in replacement** for Q40/Q4_0, with the same 18-byte block size (32 weights) and no external element LUTs.
 
 **Q41NL** is an **alternative 4.5 bits/weight** format with the same block layout, per-block FP16 scale and kernels as Q40NL (18 bytes per 32 weights; no element LUTs). It differs only in the non-linearity, using \(f_{41}(x)=x\,|x|\) with inverse \(f_{41}^{-1}(y)=\mathrm{sign}(y)\sqrt{|y|}\), which further increases tail emphasis compared to Q40NL’s \(f(x)=\tfrac12(x|x|+x)\). Like Q40NL, it is a drop-in replacement for Q40/Q4_0 and IQ4_NL.
 
-These were created by **Benjamin Rosseaux (BeRo)**, the author of the Pascal-native PALM LLM inference engine.
+**Q42NL** extends the Q4*NL family with a **parametric non-linearity**: 18 bytes per 32 weights (16 nibbles + 1 FP8(E5M2) scale + 1 int8 curve parameter **c**). The decode is \(y=(1-c)x+c|x|x\), where **c** is optimized per-block to minimize MSE. This allows each block to adapt its nonlinearity between linear (c=0) and quadratic-tail (c=1), achieving better reconstruction than fixed-curve Q40NL/Q41NL.
 
-The **Q40NL** and **Q41NL** formats are designed to improve tail reconstruction in quantized neural networks while maintaining the same storage footprint as classic 4-bit formats. They use a non-linear decode function that allocates more resolution toward the tails, making them suitable for models where tail performance is critical.
+**Q43NL** uses the same parametric approach as Q42NL but stores a **per-block FP16 scale** (instead of FP8) for higher precision: 19 bytes per 32 weights (16 nibbles + 2 FP16 scale + 1 int8 curve **c**). Both Q42NL and Q43NL support three optimization methods for finding optimal **c**: gradient-based (6x faster, 99.5-99.7% quality), coarse-to-fine grid (1.5x faster, 99.97% quality), or full grid search (slowest, 100% quality).
+
+These formats were created by **Benjamin Rosseaux (BeRo)**, the author of the Pascal-native PasLLM LLM inference engine.
+
+The **Q4*NL** formats are designed to improve tail reconstruction in quantized neural networks while maintaining compact storage. Q40NL and Q41NL use fixed non-linear decode functions, while Q42NL and Q43NL use adaptive per-block curves that allocate resolution optimally based on local weight distributions, making them suitable for models where reconstruction quality is critical.
 
 ---
 
@@ -252,6 +256,234 @@ static inline void unpack32_u4(const uint8_t b[16], uint8_t u4[32]){
 
 ---
 
+## Non-Linear 4-bit Block Quantization Format Q42NL
+
+### Format definition (Q42NL)
+
+**Q42NL** extends the Q4*NL family with a **parametric, per-block adaptive non-linearity**. Instead of using a fixed decode curve like Q40NL or Q41NL, Q42NL stores an additional **curve parameter `c`** (int8) per block, allowing the nonlinearity to adapt optimally for each 32-weight block.
+
+####Block structure & storage
+
+* **Block size:** 32 weights.
+* **Per-element code:** 4-bit signed symmetric $q \in \{-7,\ldots,+7\}$, stored as nibbles with +8 bias.
+* **Scale:** 1× **FP8(E5M2)** per block (1 byte), $s>0$.
+* **Curve parameter:** 1× **int8** per block (1 byte), $c \in [-128, 127]$ mapped to $c \in [-1, 1]$ via $c/127$.
+* **On-wire bytes per block:** 16 code bytes (2×4-bit per byte) + 1 byte FP8(E5M2) scale + 1 byte int8 curve = **18 bytes**.
+  → **Effective bit-rate:** 18/32 = **4.5 bits/weight**.
+
+#### Parametric nonlinearity
+
+The decode nonlinearity is:
+
+$$
+f_{42}(x, c) = (1-c)x + c\,x|x|,\quad x\in[-1,1], \quad c \in [-1,1].
+$$
+
+or as C code:
+
+```c
+static inline float f42(float x, float c) {
+  return (1.0f - c) * x + c * x * fabsf(x);
+}
+```
+
+**Special cases:**
+- When $c=0$: $f_{42}(x, 0) = x$ (linear, like Q4\_0)
+- When $c=1$: $f_{42}(x, 1) = x|x|$ (same as Q41NL)
+- When $c=0.5$: approximately Q40NL's curve shape
+- When $c \in (-1, 0)$: emphasizes center over tails
+
+#### Quantization & dequantization
+
+Let $w$ be a float32 weight in a block $W$.
+
+1. **Scale selection**
+
+$$
+s = \max_{w\in W} |w|
+\quad\text{(stored as fp8\_e5m2, rounded up to next representable)}
+$$
+
+2. **Normalize**
+
+$$
+y = \mathrm{clip}\!\left(\frac{w}{s}, -1, 1\right)
+$$
+
+3. **Curve optimization**
+
+Q42NL and Q43NL share the same optimization algorithm with **three methods**:
+
+**a. Gradient Method (default)** - Adam optimizer with smart initialization
+   - 12 initialization candidates (kurtosis-based, fixed values, data-driven, percentile-based)
+   - Adam optimizer iterations (configurable: 5-20)
+   - Optional 7-point line search refinement
+   - **Speed:** 6x faster than grid
+   - **Quality:** 99.5% with 5 iterations, 99.7% with 20 iterations
+   - **Best for:** Production use, large models
+
+**b. Coarse-to-Fine Method** - Two-pass grid search
+   - Coarse pass: 17 candidates across full range [-1, 1]
+   - Fine pass: 17 candidates around best coarse result  
+   - Total: ~34 evaluations vs 255 for grid
+   - **Speed:** 1.5x faster than grid
+   - **Quality:** 99.97% of grid
+   - **Best for:** Quality-critical applications
+
+**c. Grid Method** - Exhaustive search
+   - Evaluates all 255 quantizable int8 curve values
+   - Fully vectorized
+   - **Speed:** Baseline (slowest)
+   - **Quality:** 100% (reference)
+   - **Best for:** Benchmarking only
+
+For each candidate curve parameter $c$:
+
+   a. Compute inverse mapping $x = f_{42}^{-1}(y, c)$ by solving the equation:
+   
+   $$c x^2 + (1-c) x - |y| = 0$$
+   
+   (taking the positive root and restoring sign)
+
+   b. Quantize: $q = \mathrm{round}(7x)$, clamp to $[-7, 7]$
+
+   c. Reconstruct: $\hat{y} = f_{42}(q/7, c)$, then $\hat{w} = s \cdot \hat{y}$
+
+   d. Compute MSE for this block
+
+The optimization method (gradient/coarse-fine/grid) selects the $c$ that minimizes MSE.
+
+4. **Packing**
+   Store $q$ as 4-bit unsigned **nibbles** with bias +8. Two nibbles per byte; 32 codes → 16 bytes.
+   Append 1 byte FP8(E5M2) scale + 1 byte int8 curve parameter.
+
+**Dequantization** is straightforward:
+
+$$
+x=\frac{q}{7},\qquad y=f_{42}(x, c),\qquad \hat{w}=s\cdot y.
+$$
+
+> **Why Q42NL?**
+> The adaptive curve parameter `c` allows each block to optimize its nonlinearity based on the local weight distribution. Blocks with more tail emphasis benefit from higher `c` values, while blocks with more central distribution can use lower `c`. This typically achieves 0.05-0.2 dB PSNR improvement over fixed-curve Q40NL/Q41NL.
+
+### Exact byte layout
+
+Per 32-weight block:
+
+```
+Byte[0]  = (q1+8) | ((q2+8)<<4)
+Byte[1]  = (q3+8) | ((q4+8)<<4)
+...
+Byte[15] = (q31+8) | ((q32+8)<<4)
+Byte[16] = fp8_e5m2(s)
+Byte[17] = int8(c * 127)
+```
+
+---
+
+## Non-Linear 4-bit Block Quantization Format Q43NL
+
+### Format definition (Q43NL)
+
+**Q43NL** uses the same parametric nonlinearity and optimization methods as Q42NL but with **FP16 scale** (instead of FP8) for higher precision. Like Q42NL, it supports **three optimization methods** for finding the optimal curve parameter `c`, trading off between speed and quality.
+
+#### Block structure & storage
+
+* **Block size:** 32 weights.
+* **Per-element code:** 4-bit signed symmetric $q \in \{-7,\ldots,+7\}$, stored as nibbles with +8 bias.
+* **Scale:** 1× **FP16** per block (2 bytes, little-endian), $s>0$.
+* **Curve parameter:** 1× **int8** per block (1 byte), $c \in [-128, 127]$ mapped to $c \in [-1, 1]$ via $c/127$.
+* **On-wire bytes per block:** 16 code bytes (2×4-bit per byte) + 2 bytes FP16 scale + 1 byte int8 curve = **19 bytes**.
+  → **Effective bit-rate:** 19/32 = **4.75 bits/weight**.
+
+#### Parametric nonlinearity (same as Q42NL)
+
+$$
+f_{43}(x, c) = (1-c)x + c\,x|x|,\quad x\in[-1,1], \quad c \in [-1,1].
+$$
+
+Identical decode function to Q42NL; only the scale precision and optimization methods differ.
+
+#### Quantization optimization methods
+
+Q43NL offers three methods for finding optimal `c`:
+
+1. **Gradient Method (default)** - Adam optimizer
+   - **Speed:** 6.34x faster than grid search
+   - **Quality:** 99.5% of grid (1.0053x MSE ratio)
+   - **Algorithm:**
+     * Try 12 smart initialization candidates (kurtosis-based, fixed values: 0/±0.3/±0.6/±0.9, data-driven, percentile-based)
+     * Run Adam optimizer (5-20 iterations, configurable)
+     * Apply 7-point line search refinement
+   - **Best for:** Production use, large models
+   - **Tunable:** `gd_iterations` (5/10/20), `gd_lr` (learning rate)
+
+2. **Coarse-to-Fine Method**
+   - **Speed:** 1.46x faster than grid search  
+   - **Quality:** 99.97% of grid (1.0003x MSE ratio)
+   - **Algorithm:**
+     * Coarse pass: 17 candidates across full range [-1, 1]
+     * Fine pass: 17 candidates around best coarse result
+     * Total: ~34 evaluations vs 255 for grid
+   - **Best for:** Quality-critical applications
+   - **Deterministic:** No randomness, reproducible
+
+3. **Grid Method**
+   - **Speed:** 1.0x (baseline, slowest)
+   - **Quality:** 100% (reference)
+   - **Algorithm:** Exhaustive 255-point evaluation
+   - **Best for:** Benchmarking only
+
+#### Optimization comparison (tested on 32K elements)
+
+| Method | MSE Ratio | Time (s) | Speedup | Quality | Use Case |
+|--------|-----------|----------|---------|---------|----------|
+| **gradient** | 1.0053x | 0.018 | 6.34x | ⭐⭐⭐⭐ | Production default |
+| **coarse_fine** | 1.0003x | 0.076 | 1.46x | ⭐⭐⭐⭐⭐ | Quality-critical |
+| **grid** | 1.0000x | 0.111 | 1.0x | ⭐⭐⭐⭐⭐ | Reference only |
+
+**Usage examples:**
+```python
+# Fast (default)
+packed = q43nl(tensor, method="gradient", gd_iterations=5)
+
+# Balanced
+packed = q43nl(tensor, method="gradient", gd_iterations=10)
+
+# Best quality gradient
+packed = q43nl(tensor, method="gradient", gd_iterations=20, gd_lr=0.1)
+
+# Near-perfect quality
+packed = q43nl(tensor, method="coarse_fine")
+
+# Reference (slow)
+packed = q43nl(tensor, method="grid")
+```
+
+#### Dequantization (same as Q42NL)
+
+$$
+x=\frac{q}{7},\qquad y=f_{43}(x, c),\qquad \hat{w}=s\cdot y.
+$$
+
+> **Why Q43NL?**
+> The FP16 scale (vs FP8 in Q42NL) provides higher precision for blocks with extreme value ranges. The gradient optimization method makes Q43NL practical for quantizing large models—the 6x speedup can save hours of compute time while maintaining 99.5% quality. For maximum quality with reasonable speed, coarse-to-fine achieves 99.97% of optimal with only 1.5x slowdown.
+
+### Exact byte layout
+
+Per 32-weight block:
+
+```
+Byte[0]  = (q1+8) | ((q2+8)<<4)
+Byte[1]  = (q3+8) | ((q4+8)<<4)
+...
+Byte[15] = (q31+8) | ((q32+8)<<4)
+Byte[16..17] = fp16(s)  (little-endian)
+Byte[18] = int8(c * 127)
+```
+
+---
+
 ## Comparison to other formats
 
 ### At-a-glance
@@ -260,6 +492,8 @@ static inline void unpack32_u4(const uint8_t b[16], uint8_t u4[32]){
 | ------------------ | --------: | ------------------------------------------- | ---------------------- | ------------: | ----------------: | --------------------------------------------------- |
 | **Q40NL**          |        32 | 4-bit (±7) + non-linear decode $f$          | FP16                   |            18 |           **4.5** | $\hat{w}=s\cdot f(q/7)$                             |
 | **Q41NL**          |        32 | 4-bit (±7) + non-linear decode $f_{41}$     | FP16                   |            18 |           **4.5** | $\hat{w}=s\cdot f_{41}(q/7)$                        |
+| **Q42NL**          |        32 | 4-bit (±7) + **adaptive** $f_{42}(x,c)$ + curve byte | **FP8 E5M2** (1 byte) |   18 |           **4.5** | $\hat{w}=s\cdot f_{42}(q/7, c)$                     |
+| **Q43NL**          |        32 | 4-bit (±7) + **adaptive** $f_{43}(x,c)$ + curve byte | FP16                   |            19 |          **4.75** | $\hat{w}=s\cdot f_{43}(q/7, c)$                     |
 | **Q4\_0** (linear) |        32 | 4-bit (±7), **linear**                      | FP16                   |            18 |           **4.5** | $\hat{w}=s\cdot(q/7)$                               |
 | **Q8\_0** (linear) |        32 | 8-bit (±127), **linear**                    | FP16                   |            34 |           **8.5** | $\hat{w}=s\cdot(q/127)$                             |
 | **IQ4\_NL**        |        32 | 4-bit index $\to$ **16-entry LUT**          | FP16                   |            18 |           **4.5** | $\hat{w}=s\cdot \mathrm{LUT}[i]$                    |
@@ -277,7 +511,8 @@ static inline void unpack32_u4(const uint8_t b[16], uint8_t u4[32]){
 * **Bit-rate (bits/weight):**
 
   * **4.25 b/w:** **NF4** (34 B / 64), **MXFP4** (17 B / 32).
-  * **4.5 b/w:** **Q40NL**, **Q41NL**, **Q4\_0**, **IQ4\_NL** (18 B / 32), **NVFP4** (9 B / 16).
+  * **4.5 b/w:** **Q40NL**, **Q41NL**, **Q42NL**, **Q4\_0**, **IQ4\_NL** (18 B / 32), **NVFP4** (9 B / 16).
+  * **4.75 b/w:** **Q43NL** (19 B / 32).
   * **8.5 b/w:** **Q8\_0** (34 B / 32).
   * **16.0 b/w:** **FP16**, **BF16** (2 B / 1).
   * **32.0 b/w:** **FP32** (4 B / 1).
@@ -286,13 +521,15 @@ static inline void unpack32_u4(const uint8_t b[16], uint8_t u4[32]){
 
   * **Q40NL:** analytic, asymmetric nonlinearity $f(x)$ that increases effective resolution toward the tails as $|w|\to s$.
   * **Q41NL:** analytic nonlinearity $f_{41}(x)=x|x|$ with inverse $f_{41}^{-1}(y)=\mathrm{sign}(y)\sqrt{|y|}$; **stronger tail emphasis** than Q40NL (slope 0 at 0, $\approx 2$ near $|x|=1$).
+  * **Q42NL / Q43NL:** **adaptive parametric nonlinearity** $f(x,c)=(1-c)x+cx|x|$ with per-block optimized curve parameter $c$. Can adapt from linear ($c=0$) to Q41NL-like ($c=1$) based on local weight distribution. Q42NL uses FP8 scale (18 B/32), Q43NL uses FP16 scale (19 B/32).
   * **IQ4\_NL / NF4:** non-uniform **LUT**s. **IQ4\_NL** uses a hand-crafted 16-center table; **NF4** uses Gaussian-quantile centers; both allocate more density near common values and less in the extremes (pattern depends on the table).
   * **Q4\_0 / Q8\_0:** **linear** grids (uniform steps after scaling).
   * **NVFP4 / MXFP4:** **FP4 (E2M1)** element codes → multiplicative spacing (log-like); good dynamic range but coarser small-magnitude steps than linear grids at the same bit budget.
 
 * **Scales & block size (absmax unless noted):**
 
-  * **FP16 per 32:** **Q40NL**, **Q41NL**, **Q4\_0**, **Q8\_0**, **IQ4\_NL**.
+  * **FP16 per 32:** **Q40NL**, **Q41NL**, **Q43NL**, **Q4\_0**, **Q8\_0**, **IQ4\_NL**.
+  * **FP8 E5M2 per 32:** **Q42NL** (rounded up to next representable).
   * **FP16 per 64:** **NF4** (canonical absmax).
   * **FP8 E4M3 per 16:** **NVFP4** (non-power-of-two, finer than E8M0).
   * **E8M0 per 32:** **MXFP4** (power-of-two; coarser than E4M3 but cheap).
@@ -301,6 +538,7 @@ static inline void unpack32_u4(const uint8_t b[16], uint8_t u4[32]){
 * **Arithmetic & kernel shape:**
 
   * **Q4\*NL (Q40NL/Q41NL):** nibble unpack → small closed-form nonlinearity ($f$ or $f_{41}$) → multiply by scale. (Optionally LUT or poly approx if desired.)
+  * **Q42NL / Q43NL:** nibble unpack → parametric nonlinearity $f(x,c)$ using per-block curve parameter → multiply by scale. Slightly more complex than Q40NL/Q41NL but still analytic.
   * **IQ4\_NL / NF4:** nibble unpack → single LUT read → multiply by scale (branch-free).
   * **NVFP4 / MXFP4:** nibble unpack → FP4 decode (tiny table/arithmetic) → multiply by per-block scale. **E8M0** can be implemented as an exponent bias (power-of-two).
   * **Q8\_0:** byte load (int8) → multiply by scale.
@@ -308,13 +546,15 @@ static inline void unpack32_u4(const uint8_t b[16], uint8_t u4[32]){
 
 * **Outliers / robustness:**
 
-  * **Absmax scaling** in **Q40NL/Q41NL/Q4\_0/Q8\_0/IQ4\_NL/NF4** makes them sensitive to a single large outlier; **NF4** uses a **larger block (64)** so one outlier can compress local resolution more than per-32 schemes.  
+  * **Absmax scaling** in **Q40NL/Q41NL/Q42NL/Q43NL/Q4\_0/Q8\_0/IQ4\_NL/NF4** makes them sensitive to a single large outlier; **NF4** uses a **larger block (64)** so one outlier can compress local resolution more than per-32 schemes.  
+  * **Q42NL/Q43NL** can partially adapt to outliers via curve parameter optimization, potentially reducing impact compared to fixed-curve formats.
   * **NVFP4/MXFP4:** scale quantization matters—**E4M3** is finer than **E8M0**; **E8M0** may step coarsely if the ideal scale falls between powers of two.
 
 * **When they tend to shine (rule-of-thumb):**
 
   * **NF4:** blocks with near-Gaussian normalized weights (its centers match that shape).
   * **Q4\*NL (Q40NL/Q41NL):** tails matter or you want an analytic, branch-free decode (Q41NL emphasizes tails **more** than Q40NL).
+  * **Q42NL / Q43NL:** blocks with varying weight distributions that benefit from adaptive nonlinearity; Q43NL offers optimization methods trading speed vs quality (gradient: 6x faster, coarse-fine: near-perfect quality).
   * **IQ4\_NL:** fast LUT path with fixed per-32 scale; behavior depends on its table.
   * **NVFP4/MXFP4:** hardware/paths optimized for FP4/FP8 and simple exponent math.
   * **Q4\_0:** simplest linear 4-bit baseline.

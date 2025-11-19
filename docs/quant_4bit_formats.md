@@ -588,12 +588,12 @@ $$
 #### C 
 
 ```c
-// Q4_0 (Linear Q4) — pack/unpack per 32, quant/dequant
+// Q40 (Linear Q4) — pack/unpack per 32, quant/dequant
 #include <stdint.h>
 #include <math.h>
 
 // Pack 32 4-bit values (0..15) into 16 bytes; low nibble first.
-static inline void q4_0_pack_u4x32(const uint8_t u4[32], uint8_t bytes[16]) {
+static inline void q40_pack_u4x32(const uint8_t u4[32], uint8_t bytes[16]) {
   for (int i = 0; i < 16; ++i) {
     uint8_t lo = (uint8_t)(u4[(i << 1) | 0] & 0x0f);
     uint8_t hi = (uint8_t)(u4[(i << 1) | 1] & 0x0f);
@@ -602,7 +602,7 @@ static inline void q4_0_pack_u4x32(const uint8_t u4[32], uint8_t bytes[16]) {
 }
 
 // Unpack 16 bytes back to 32 4-bit values (0..15).
-static inline void q4_0_unpack_u4x32(const uint8_t bytes[16], uint8_t u4[32]) {
+static inline void q40_unpack_u4x32(const uint8_t bytes[16], uint8_t u4[32]) {
   for (int i = 0; i < 16; ++i) {
     uint8_t b = bytes[i];
     u4[(i << 1) | 0] = (uint8_t)(b & 0x0f);
@@ -611,7 +611,7 @@ static inline void q4_0_unpack_u4x32(const uint8_t bytes[16], uint8_t u4[32]) {
 }
 
 // Quantize one value to linear Q4 (returns q in [-7..7]).
-static inline int8_t q4_0_quant(float w, float s) {
+static inline int8_t q40_quant(float w, float s) {
   if (s <= 0.0f) {
     return 0;
   } else {
@@ -627,7 +627,7 @@ static inline int8_t q4_0_quant(float w, float s) {
 }
 
 // Dequantize one code q in [-7..7] with scale s.
-static inline float q4_0_dequant(int8_t q, float s) {
+static inline float q40_dequant(int8_t q, float s) {
   return s * ((float)q / 7.0f);
 }
 
@@ -1191,11 +1191,11 @@ $$
 #### C
 
 ```c
-// Q8_0 (Linear Q8) — single-element quant/dequant
+// Q80 (Linear Q8) — single-element quant/dequant
 #include <stdint.h>
 #include <math.h>
 
-static inline int8_t q8_0_quant(float w, float s) {
+static inline int8_t q80_quant(float w, float s) {
   if (s <= 0.0f){
     return 0;
   }else{
@@ -1210,7 +1210,7 @@ static inline int8_t q8_0_quant(float w, float s) {
   }
 }
 
-static inline float q8_0_dequant(int8_t q, float s) {
+static inline float q80_dequant(int8_t q, float s) {
   return s * ((float)q / 127.0f);
 }
 ```
@@ -1424,7 +1424,7 @@ FP32        gauss σ≈3.52563  r=1.000000  slope=1.000000  |slope-1|=0  |b|=0  
 * **Prefer Q41NL when…** minimizing **Gaussian JSD** (0.016) at 4.5 b/w.
 * **Prefer MXFP4 when…** you want **4.25 b/w** and can tolerate coarse PoT scale (E8M0).
 * **Prefer NF4 when…** your normalized block distribution is **close to Gaussian**; its Gaussian-quantile LUT fits that shape, but outliers or skew can hurt (QLoRA LUT).
-* **Prefer Q8_0 when…** you can afford ~8.5 b/w for higher precision.
+* **Prefer Q80 when…** you can afford ~8.5 b/w for higher precision.
 * **Prefer FP16/BF16/FP32 when…** you need **full precision**.
 
 ---

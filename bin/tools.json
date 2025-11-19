@@ -1,0 +1,15 @@
+{
+  
+  /* Tavily API key for accessing Tavily web seatch services */
+  "tavily_key": "tvly-dev-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", /* Replace with your own actual key */
+
+  /* MCP (Model Control Protocol) server configurations */
+  "mcp": {
+    "demo-mcp-server": {
+      "endpoint": "http://0.0.0.0:8181/rpc",
+      "authorization": "Bearer YOUR_ACCESS_TOKEN",
+      "timeout_milliseconds": 30000
+    }
+  }
+
+}

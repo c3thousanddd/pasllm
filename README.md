@@ -1,2 +1,104 @@
-# pasllm
-PasLLM - LLM interference engine in Object Pascal
+# PasLLM
+
+A high-performance Large Language Model inference engine written in pure Object Pascal.
+
+## Overview
+
+PasLLM is a native Pascal implementation for running LLMs locally with optimized quantization and inference capabilities. It supports multiple model architectures and features advanced 4-bit quantization formats for efficient model deployment.
+
+## Features
+
+- **Pure Object Pascal** - No Python or external dependencies for inference
+- **Cross-Platform** - Compatible with Delphi ≥11.2 and FreePascal ≥3.3.1
+- **Multiple Architectures** - Support for Llama, Qwen, Phi, Gemma, Mixtral, and more
+- **Advanced Quantization** - Custom Q4*NL formats (Q40NL, Q41NL, Q42NL, Q43NL) with superior tail reconstruction
+- **Optimized Performance** - Native Pascal implementation with platform-specific optimizations
+- **CLI and GUI** - Both command-line interface and visual applications (FMX, VCL, LCL)
+
+## Quantization Formats
+
+PasLLM implements several custom 4-bit and 8-bit quantization formats designed for optimal quality/size tradeoff:
+
+- **Q40NL** - 4.5 bits/weight with non-linear decode (drop-in replacement for Q4_0)
+- **Q41NL** - Alternative non-linearity with increased tail emphasis
+- **Q42NL** - Enhanced variant with improved reconstruction
+- **Q43NL** - Advanced format with multiple optimization methods (gradient, coarse-fine, grid)
+- **Q80** - 8-bit quantization for higher quality
+- **FP8** - 8-bit floating point support
+
+These formats achieve 99.5-99.97% of full precision quality while maintaining compact model sizes.
+
+## Supported Models
+
+PasLLM includes pre-quantized models in the `bin/models/` directory:
+
+- **Llama** - 3/3.1/3.2 (1B, 3B, 8B variants, including abliterated/uncensored)
+- **Qwen 2.5** - 0.5B, 1.5B, 3B, 7B Instruct
+- **Qwen 3** - 0.6B, 1.7B, 4B, 8B, 14B, 32B (including thinking/coder/abliterated variants, 30B MoE models)
+- **Phi-3** - Mini, Medium (4K context)
+- **Gemma** - 1.1 (2B) (support for Gemma 2 and 3 coming later)
+- **SmolLM** - 2 (135M, 360M, 1.7B) and 3 (3B)
+- **Mixtral** - 8x7B Instruct
+- **EuroMoE** - 2.6B (0.6B active)
+- **SimpleChat** - 4B, 14B
+- **DeepSeek** - R1 variants
+- **TinyLlama** - 1.1B Chat
+
+## Quick Start
+
+### Command Line Interface
+
+```bash
+# Run inference with a quantized model
+./bin/pasllmcli --model bin/models/qwen2.5_0.5b_instruct_q40nl.safetensors
+```
+
+### Building from Source
+
+**FreePascal:**
+```bash
+fpc -O3 src/pasllmcli/pasllmcli.dpr
+```
+
+**Delphi:**
+Open `src/pasllmcli/pasllmcli.dproj` in Delphi IDE and build.
+
+## Project Structure
+
+```
+src/
+  ├── PasLLM.pas              # Core inference engine
+  ├── PasLLMChatControl.pas   # Chat interface control
+  ├── pasllmcli/              # Command-line interface
+  ├── pasllmappfmx/           # FireMonkey GUI app
+  ├── pasllmappvcl/           # VCL GUI app
+  └── pasllmapplcl/           # Lazarus LCL GUI app
+tools/
+  └── convert.py              # Model conversion utilities
+docs/
+  └── quant_4bit_formats.md   # Detailed format specifications
+```
+
+## Documentation
+
+- [4-bit Quantization Formats](docs/quant_4bit_formats.md) - Complete specification of Q4*NL formats
+
+## License
+
+Dual-licensed under:
+- **AGPL 3.0** for open-source use
+- **Commercial license** available for proprietary applications (contact: benjamin@rosseaux.com)
+
+## Author
+
+**Benjamin Rosseaux** (BeRo)  
+GitHub: [@BeRo1985](https://github.com/BeRo1985)  
+Contact: benjamin@rosseaux.com
+
+## Contributing
+
+Contributions are welcome! Please ensure:
+- Code is compatible with both Delphi ≥11.2 and FreePascal ≥3.3.1
+- Compiles on 32-bit and 64-bit platforms (x86-32, x86-64, ARM, ARM64)
+- No platform-specific or third-party dependencies (unless out-ifdef-able)
+- Follows the contribution guidelines in `src/PasLLM.pas`

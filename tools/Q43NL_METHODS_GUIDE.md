@@ -331,6 +331,3 @@ python q43nl_gradient.py
    - For benchmarking only
    - Perfect quality baseline
 
-**The optimization journey is complete!** 🎉
-
-From 1.3-2.5x worse (unacceptable) to 1.0003x worse (essentially perfect), while being faster! 🚀

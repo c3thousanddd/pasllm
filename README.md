@@ -39,7 +39,8 @@ Pre-quantized models are available at [https://mega.nz/folder/krcgHCpZ#0tjLqup_H
 - **Qwen 3** - 0.6B, 1.7B, 4B, 8B, 14B, 32B (including thinking/coder/abliterated variants, 30B MoE models)
 - **Phi-3** - Mini, Medium (4K context)
 - **Gemma** - 1.1 (2B) (support for Gemma 2 and 3 coming later)
-- **SmolLM** - 2 (135M, 360M, 1.7B) and 3 (3B)
+- **SmolLM 2** - 135M, 360M, 1.7B
+- **SmolLM 3** - 3B
 - **Mixtral** - 8x7B Instruct
 - **EuroMoE** - 2.6B (0.6B active)
 - **SimpleChat** - 4B, 14B

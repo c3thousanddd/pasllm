@@ -7,8 +7,8 @@ Torch-only evaluator for several 4-bit/8-bit and float baselines:
 - IQ4_NL  : ggml/gguf 4-bit with LUT (kvalues_iq4nl), fp16 block scale per 32
 - MXFP4   : OCP 4-bit E2M1 per element + E8M0 (power-of-two) scale per 32
 - NVFP4   : NVIDIA 4-bit E2M1 per element + FP8 E4M3 scale per 16
-- Q4_0    : Linear Q4 (/7), fp16 block scale per 32
-- Q8_0    : Linear Q8 (/127), fp16 block scale per 32
+- Q40     : Linear Q4 (/7), fp16 block scale per 32
+- Q80     : Linear Q8 (/127), fp16 block scale per 32
 - NF4     : Simple codebook-only NF4 (no scale) packed per 32 (kept for backward-compat with earlier drafts)
 - NF4_BS64: Canonical NF4 (QLoRA centers) with absmax fp16 scale per 64 (two 32-nibble lanes + fp16)
 - FP16    : Per-element fp16 cast baseline
@@ -532,9 +532,9 @@ def q43nl_dequantize(packed: torch.Tensor, out_shape=None):
     return out.reshape(out_shape) if out_shape is not None else out
 
 
-# -------- Q4_0 (linear) --------
+# -------- Q40 (linear) --------
 
-def q4_0_quantize(t: torch.Tensor):
+def q40_quantize(t: torch.Tensor):
     """Linear Q4 per 32 with fp16 scale (like ggml Q4_0)."""
     assert t.numel() % 32 == 0
     T = t.to(torch.float32).view(-1, 32)
@@ -548,7 +548,7 @@ def q4_0_quantize(t: torch.Tensor):
     sbytes = scale.to(torch.float16).view(torch.uint8).view(-1,2)
     return torch.cat([qbytes, sbytes], dim=1).reshape(-1), scale
 
-def q4_0_dequantize(packed: torch.Tensor, out_shape=None):
+def q40_dequantize(packed: torch.Tensor, out_shape=None):
     P = packed.view(-1,18)
     qbytes, sbytes = P[:,:16], P[:,16:18]
     scale = sbytes.view(torch.float16).to(torch.float32).view(-1)
@@ -559,9 +559,9 @@ def q4_0_dequantize(packed: torch.Tensor, out_shape=None):
     return out.reshape(out_shape) if out_shape is not None else out
 
 
-# -------- Q8_0 (linear 8-bit) --------
+# -------- Q80 (linear 8-bit) --------
 
-def q8_0_quantize(t: torch.Tensor):
+def q80_quantize(t: torch.Tensor):
     """Linear Q8 per 32 with fp16 scale."""
     assert t.numel() % 32 == 0
     T = t.to(torch.float32).view(-1, 32)
@@ -573,7 +573,7 @@ def q8_0_quantize(t: torch.Tensor):
     sbytes = scale.to(torch.float16).view(torch.uint8).view(-1,2)
     return torch.cat([qbytes, sbytes], dim=1).reshape(-1), scale
 
-def q8_0_dequantize(packed: torch.Tensor, out_shape=None):
+def q80_dequantize(packed: torch.Tensor, out_shape=None):
     P = packed.view(-1,34)             # 32 codes + 2 scale bytes
     qbytes, sbytes = P[:,:32], P[:,32:34]
     q = qbytes.view(torch.int8).to(torch.float32)
@@ -1033,15 +1033,15 @@ def run(device: Optional[str] = None, groups32: int = 1024, seed: int = 1234, du
     Q43_rec = q43nl_dequantize(q43_packed, out_shape=T.shape)
     add_variant_results("Q43NL", Q43_rec, T, X, block_size=32)
 
-    # Q4_0
-    q40lin_packed, _ = q4_0_quantize(T)
-    Q40LIN_rec = q4_0_dequantize(q40lin_packed, out_shape=T.shape)
-    add_variant_results("Q4_0", Q40LIN_rec, T, X, block_size=32)
+    # Q40
+    q40lin_packed, _ = q40_quantize(T)
+    Q40LIN_rec = q40_dequantize(q40lin_packed, out_shape=T.shape)
+    add_variant_results("Q40", Q40LIN_rec, T, X, block_size=32)
 
-    # Q8_0
-    q80_packed, _ = q8_0_quantize(T)
-    Q80_rec = q8_0_dequantize(q80_packed, out_shape=T.shape)
-    add_variant_results("Q8_0", Q80_rec, T, X, block_size=32)
+    # Q80
+    q80_packed, _ = q80_quantize(T)
+    Q80_rec = q80_dequantize(q80_packed, out_shape=T.shape)
+    add_variant_results("Q80", Q80_rec, T, X, block_size=32)
 
     # IQ4_NL
     iq_packed, _ = iq4_nl_quantize(T)
@@ -1101,11 +1101,11 @@ def run(device: Optional[str] = None, groups32: int = 1024, seed: int = 1234, du
         def fmt(v):
             return "—" if v is None else f"{v:.6f}"
 
-        order = ["Q40NL", "Q41NL", "Q42NL", "Q43NL", "Q4_0", "Q8_0", "IQ4_NL", "NVFP4", "MXFP4", "NF4", "NF4_BS64", "FP16", "BF16", "FP32"]
+        order = ["Q40NL", "Q41NL", "Q42NL", "Q43NL", "Q40", "Q80", "IQ4_NL", "NVFP4", "MXFP4", "NF4", "NF4_BS64", "FP16", "BF16", "FP32"]
 
         orderWithBold = ["**" + k + "**" for k in order]
 
-        eligible_idx = [i for i,k in enumerate(order) if k not in ("Q8_0", "FP16", "BF16", "FP32")]  # ignore these for "best"
+        eligible_idx = [i for i,k in enumerate(order) if k not in ("Q80", "FP16", "BF16", "FP32")]  # ignore these for "best"
     
         def _pick_best(vals, consider_idx, best="min", use_abs=False, eps=1e-12):
             cand = []

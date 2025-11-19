@@ -138,7 +138,7 @@ Understood. Here is a **complete Q41NL section**, fully duplicated from your Q40
 
 # Q41NL: A Non-Linear 4-bit Block Quantization Format
 
-This section specifies the **Q41NL** format and compares it to the same baselines as Q40NL. **Q41NL** is a **4.5 bits/weight** format with **non-linear decode**, designed to improve tail reconstruction while keeping the same storage as classic Q40/Q4\_0 and IQ4\_NL. Like Q40NL, it uses **4-bit signed symmetric codes** with a **per-block FP16 scale**, and it is a **drop-in replacement** (18-byte block size for 32 weights; no element LUTs).&#x20;
+This section specifies the **Q41NL** format and compares it to the same baselines as Q40NL. **Q41NL** is a **4.5 bits/weight** format with **non-linear decode**, designed to improve tail reconstruction while keeping the same storage as classic Q40/Q40 and IQ4\_NL. Like Q40NL, it uses **4-bit signed symmetric codes** with a **per-block FP16 scale**, and it is a **drop-in replacement** (18-byte block size for 32 weights; no element LUTs).&#x20;
 
 ---
 
@@ -288,7 +288,7 @@ static inline float f42(float x, float c) {
 ```
 
 **Special cases:**
-- When $c=0$: $f_{42}(x, 0) = x$ (linear, like Q4\_0)
+- When $c=0$: $f_{42}(x, 0) = x$ (linear, like Q40)
 - When $c=1$: $f_{42}(x, 1) = x|x|$ (same as Q41NL)
 - When $c=0.5$: approximately Q40NL's curve shape
 - When $c \in (-1, 0)$: emphasizes center over tails
@@ -494,8 +494,8 @@ Byte[18] = int8(c * 127)
 | **Q41NL**          |        32 | 4-bit (±7) + non-linear decode $f_{41}$     | FP16                   |            18 |           **4.5** | $\hat{w}=s\cdot f_{41}(q/7)$                        |
 | **Q42NL**          |        32 | 4-bit (±7) + **adaptive** $f_{42}(x,c)$ + curve byte | **FP8 E5M2** (1 byte) |   18 |           **4.5** | $\hat{w}=s\cdot f_{42}(q/7, c)$                     |
 | **Q43NL**          |        32 | 4-bit (±7) + **adaptive** $f_{43}(x,c)$ + curve byte | FP16                   |            19 |          **4.75** | $\hat{w}=s\cdot f_{43}(q/7, c)$                     |
-| **Q4\_0** (linear) |        32 | 4-bit (±7), **linear**                      | FP16                   |            18 |           **4.5** | $\hat{w}=s\cdot(q/7)$                               |
-| **Q8\_0** (linear) |        32 | 8-bit (±127), **linear**                    | FP16                   |            34 |           **8.5** | $\hat{w}=s\cdot(q/127)$                             |
+| **Q40** (linear) |        32 | 4-bit (±7), **linear**                      | FP16                   |            18 |           **4.5** | $\hat{w}=s\cdot(q/7)$                               |
+| **Q80** (linear) |        32 | 8-bit (±127), **linear**                    | FP16                   |            34 |           **8.5** | $\hat{w}=s\cdot(q/127)$                             |
 | **IQ4\_NL**        |        32 | 4-bit index $\to$ **16-entry LUT**          | FP16                   |            18 |           **4.5** | $\hat{w}=s\cdot \mathrm{LUT}[i]$                    |
 | **NVFP4**          |        16 | **FP4 (E2M1)** element codes                | **FP8 E4M3** (1 byte)  |             9 |           **4.5** | $\hat{w}= \mathrm{FP4}(code)\cdot \mathrm{E4M3}(S)$ |
 | **MXFP4**          |        32 | **FP4 (E2M1)** element codes                | **E8M0** (1 byte, PoT) |            17 |          **4.25** | $\hat{w}= \mathrm{FP4}(code)\cdot 2^{e-127}$        |
@@ -511,9 +511,9 @@ Byte[18] = int8(c * 127)
 * **Bit-rate (bits/weight):**
 
   * **4.25 b/w:** **NF4** (34 B / 64), **MXFP4** (17 B / 32).
-  * **4.5 b/w:** **Q40NL**, **Q41NL**, **Q42NL**, **Q4\_0**, **IQ4\_NL** (18 B / 32), **NVFP4** (9 B / 16).
+  * **4.5 b/w:** **Q40NL**, **Q41NL**, **Q42NL**, **Q40**, **IQ4\_NL** (18 B / 32), **NVFP4** (9 B / 16).
   * **4.75 b/w:** **Q43NL** (19 B / 32).
-  * **8.5 b/w:** **Q8\_0** (34 B / 32).
+  * **8.5 b/w:** **Q80** (34 B / 32).
   * **16.0 b/w:** **FP16**, **BF16** (2 B / 1).
   * **32.0 b/w:** **FP32** (4 B / 1).
 
@@ -523,12 +523,12 @@ Byte[18] = int8(c * 127)
   * **Q41NL:** analytic nonlinearity $f_{41}(x)=x|x|$ with inverse $f_{41}^{-1}(y)=\mathrm{sign}(y)\sqrt{|y|}$; **stronger tail emphasis** than Q40NL (slope 0 at 0, $\approx 2$ near $|x|=1$).
   * **Q42NL / Q43NL:** **adaptive parametric nonlinearity** $f(x,c)=(1-c)x+cx|x|$ with per-block optimized curve parameter $c$. Can adapt from linear ($c=0$) to Q41NL-like ($c=1$) based on local weight distribution. Q42NL uses FP8 scale (18 B/32), Q43NL uses FP16 scale (19 B/32).
   * **IQ4\_NL / NF4:** non-uniform **LUT**s. **IQ4\_NL** uses a hand-crafted 16-center table; **NF4** uses Gaussian-quantile centers; both allocate more density near common values and less in the extremes (pattern depends on the table).
-  * **Q4\_0 / Q8\_0:** **linear** grids (uniform steps after scaling).
+  * **Q40 / Q80:** **linear** grids (uniform steps after scaling).
   * **NVFP4 / MXFP4:** **FP4 (E2M1)** element codes → multiplicative spacing (log-like); good dynamic range but coarser small-magnitude steps than linear grids at the same bit budget.
 
 * **Scales & block size (absmax unless noted):**
 
-  * **FP16 per 32:** **Q40NL**, **Q41NL**, **Q43NL**, **Q4\_0**, **Q8\_0**, **IQ4\_NL**.
+  * **FP16 per 32:** **Q40NL**, **Q41NL**, **Q43NL**, **Q40**, **Q80**, **IQ4\_NL**.
   * **FP8 E5M2 per 32:** **Q42NL** (rounded up to next representable).
   * **FP16 per 64:** **NF4** (canonical absmax).
   * **FP8 E4M3 per 16:** **NVFP4** (non-power-of-two, finer than E8M0).
@@ -541,13 +541,13 @@ Byte[18] = int8(c * 127)
   * **Q42NL / Q43NL:** nibble unpack → parametric nonlinearity $f(x,c)$ using per-block curve parameter → multiply by scale. Slightly more complex than Q40NL/Q41NL but still analytic.
   * **IQ4\_NL / NF4:** nibble unpack → single LUT read → multiply by scale (branch-free).
   * **NVFP4 / MXFP4:** nibble unpack → FP4 decode (tiny table/arithmetic) → multiply by per-block scale. **E8M0** can be implemented as an exponent bias (power-of-two).
-  * **Q4\_0:** nibble unpack → linear scaling (multiply by scale / 7).
-  * **Q8\_0:** byte load (int8) → multiply by scale.
+  * **Q40:** nibble unpack → linear scaling (multiply by scale / 7).
+  * **Q80:** byte load (int8) → multiply by scale.
   * **FP16 / BF16:** dtype cast to f32 (no per-block logic). **FP32:** identity.
 
 * **Outliers / robustness:**
 
-  * **Absmax scaling** in **Q40NL/Q41NL/Q42NL/Q43NL/Q4\_0/Q8\_0/IQ4\_NL/NF4** makes them sensitive to a single large outlier; **NF4** uses a **larger block (64)** so one outlier can compress local resolution more than per-32 schemes.  
+  * **Absmax scaling** in **Q40NL/Q41NL/Q42NL/Q43NL/Q40/Q80/IQ4\_NL/NF4** makes them sensitive to a single large outlier; **NF4** uses a **larger block (64)** so one outlier can compress local resolution more than per-32 schemes.  
   * **Q42NL/Q43NL** can partially adapt to outliers via curve parameter optimization, potentially reducing impact compared to fixed-curve formats.
   * **NVFP4/MXFP4:** scale quantization matters—**E4M3** is finer than **E8M0**; **E8M0** may step coarsely if the ideal scale falls between powers of two.
 
@@ -558,15 +558,15 @@ Byte[18] = int8(c * 127)
   * **Q42NL / Q43NL:** blocks with varying weight distributions that benefit from adaptive nonlinearity; Q43NL offers optimization methods trading speed vs quality (gradient: 6x faster, coarse-fine: near-perfect quality).
   * **IQ4\_NL:** fast LUT path with fixed per-32 scale; behavior depends on its table.
   * **NVFP4/MXFP4:** hardware/paths optimized for FP4/FP8 and simple exponent math.
-  * **Q4\_0:** simplest linear 4-bit baseline.
-  * **Q8\_0:** higher fidelity at modest extra storage vs 4-bit.
+  * **Q40:** simplest linear 4-bit baseline.
+  * **Q80:** higher fidelity at modest extra storage vs 4-bit.
   * **FP16/BF16:** near-lossless/very low error with simple casts; **FP32:** exact.
 
 ---
 
 ## Other formats — detailed specs
 
-### Q4\_0 (Linear Q4, ggml-style)
+### Q40 (Linear Q4, ggml-style)
 
 **What it is.** Linear 4-bit symmetric quantizer with one **fp16 absmax** scale per block.
 
@@ -1169,7 +1169,7 @@ static inline float nf4_dequant_elem(uint8_t q, float s) {
 
 ---
 
-### Q8\_0 (Linear Q8)
+### Q80 (Linear Q8)
 
 **What it is.** 8-bit symmetric quantization with one **fp16 absmax** scale per block.
 
@@ -1360,12 +1360,12 @@ Q42NL       gauss σ≈3.52563  r=0.996009  slope=0.998611  |slope-1|=0.00138884
 Q43NL       max|e|=1.17504  mean|e|=0.229153  p99|e|= 0.664635
 Q43NL       dot=-1.532759e+02   Δ=-1.422812e+01   med|Δ·|= 9.960861e-01
 Q43NL       gauss σ≈3.52563  r=0.996828  slope=0.998536  |slope-1|=0.00146434  |b|=0.000255965  qq_mae=0.0348695  JSD= 0.0246166
-Q4_0        max|e|=1.0401  mean|e|=0.285264  p99|e|= 0.721546
-Q4_0        dot=-1.270927e+02   Δ= 1.195511e+01   med|Δ·|= 1.217222e+00
-Q4_0        gauss σ≈3.52563  r=0.995361  slope=1.000205  |slope-1|=0.000205004  |b|=0.000760246  qq_mae=0.0819448  JSD= 0.074839
-Q8_0        max|e|=0.0590816  mean|e|=0.01581  p99|e|= 0.0399992
-Q8_0        dot=-1.421631e+02   Δ=-3.115387e+00   med|Δ·|= 6.332970e-02
-Q8_0        gauss σ≈3.52563  r=0.999986  slope=1.000007  |slope-1|=6.90508e-06  |b|=7.09742e-05  qq_mae=0.00241307  JSD= 4.75344e-05
+Q40         max|e|=1.0401  mean|e|=0.285264  p99|e|= 0.721546
+Q40         dot=-1.270927e+02   Δ= 1.195511e+01   med|Δ·|= 1.217222e+00
+Q40         gauss σ≈3.52563  r=0.995361  slope=1.000205  |slope-1|=0.000205004  |b|=0.000760246  qq_mae=0.0819448  JSD= 0.074839
+Q80         max|e|=0.0590816  mean|e|=0.01581  p99|e|= 0.0399992
+Q80         dot=-1.421631e+02   Δ=-3.115387e+00   med|Δ·|= 6.332970e-02
+Q80         gauss σ≈3.52563  r=0.999986  slope=1.000007  |slope-1|=6.90508e-06  |b|=7.09742e-05  qq_mae=0.00241307  JSD= 4.75344e-05
 IQ4_NL      max|e|=1.54522  mean|e|=0.245748  p99|e|= 0.866982
 IQ4_NL      dot=-1.538636e+02   Δ=-1.481581e+01   med|Δ·|= 1.219061e+00
 IQ4_NL      gauss σ≈3.52563  r=0.996302  slope=0.985870  |slope-1|=0.0141301  |b|=0.0200483  qq_mae=0.0535963  JSD= 0.0373498
@@ -1392,7 +1392,7 @@ FP32        dot=-1.390478e+02   Δ= 0.000000e+00   med|Δ·|= 0.000000e+00
 FP32        gauss σ≈3.52563  r=1.000000  slope=1.000000  |slope-1|=0  |b|=0  qq_mae=0  JSD= 0
 ```
 
-| **metric** | **Q40NL** | **Q41NL** | **Q42NL** | **Q43NL** | **Q4_0** | **Q8_0** | **IQ4_NL** | **NVFP4** | **MXFP4** | **NF4** | **NF4_BS64** | **FP16** | **BF16** | **FP32** |
+| **metric** | **Q40NL** | **Q41NL** | **Q42NL** | **Q43NL** | **Q40** | **Q80** | **IQ4_NL** | **NVFP4** | **MXFP4** | **NF4** | **NF4_BS64** | **FP16** | **BF16** | **FP32** |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | **mean ∣e∣ (abs error)** | 0.259683 | 0.298122 | 0.259534 | **0.229153** | 0.285264 | 0.015810 | 0.245748 | 0.252515 | 0.309253 | 1.938310 | 0.256518 | 0.000497 | 0.003968 | 0.000000 |
 | **p99 ∣e∣ (abs error)** | 0.756543 | 0.976523 | 0.760177 | **0.664635** | 0.721546 | 0.039999 | 0.866982 | 1.073749 | 1.676842 | 8.109633 | 0.907737 | 0.002182 | 0.018287 | 0.000000 |
@@ -1417,7 +1417,7 @@ FP32        gauss σ≈3.52563  r=1.000000  slope=1.000000  |slope-1|=0  |b|=0  
 * **Prefer Q43NL when…** you want the **best mean ∣e∣** (0.229) and **best p99 ∣e∣** (0.665) among all 4-bit formats, plus excellent Gaussian matching.
 * **Prefer Q42NL when…** you need adaptive curve optimization with minimal storage overhead (FP8 scale = 4.5 b/w exactly).
 * **Prefer IQ4_NL when…** chasing the **lowest mean ∣e∣ at 4.5 b/w** among non-adaptive formats (table winner among fixed 4.5 b/w).
-* **Prefer Q4_0 when…** you want the **lowest avg ∣Δ·∣** (11.96) and **lowest p99 ∣e∣** at 4.5 b/w (linear quantization).
+* **Prefer Q40 when…** you want the **lowest avg ∣Δ·∣** (11.96) and **lowest p99 ∣e∣** at 4.5 b/w (linear quantization).
 * **Prefer NVFP4 when…** you care about **median ∣Δ·∣** at 4.5 b/w (among non-adaptive formats) or need hardware FP4 E2M1 support.
 * **Prefer Q43NL when…** minimizing **median ∣Δ·∣** (1.00) and **Gaussian Q–Q MAE** (0.035) among all 4-bit formats.
 * **Prefer Q40NL when…** minimizing **Gaussian Q–Q MAE** (0.045) at 4.5 b/w among fixed-curve formats.
@@ -1447,10 +1447,10 @@ FP32        gauss σ≈3.52563  r=1.000000  slope=1.000000  |slope-1|=0  |b|=0  
   * **Q43NL (4.59 b/w):** Adaptive curve with FP16 scale, **19 B / 32 weights** — **best overall 4-bit quality** (exhaustive search over all FP16 values).
 * **Q43NL wins:** best **mean ∣e∣** (0.229), best **p99 ∣e∣** (0.665), best **median ∣Δ·∣** (0.996), best **Gaussian Q–Q MAE** (0.035) among 4-bit formats.
 * **IQ4_NL:** best **mean ∣e∣** (0.246) among 4.5 b/w fixed-curve formats in this run (tiny LUT cost).
-* **Q4_0:** best **avg ∣Δ·∣** (11.96) and **p99 ∣e∣** among 4.5 b/w formats (linear quantization).
+* **Q40:** best **avg ∣Δ·∣** (11.96) and **p99 ∣e∣** among 4.5 b/w formats (linear quantization).
 * **NVFP4:** best **median ∣Δ·∣** among 4.5 b/w fixed-curve formats; FP4/FP8 decode-friendly.
 * **Q40NL / Q41NL:** best **Gaussian Q–Q MAE** (Q40NL) and **JSD** (Q41NL) at 4.5 b/w.
 * **NF4:** solid when blocks are **near-Gaussian**; degrades with outliers/skew.
-* **Q8_0 / FP16/BF16/FP32:** reference baselines.
+* **Q80 / FP16/BF16/FP32:** reference baselines.
 
 ---

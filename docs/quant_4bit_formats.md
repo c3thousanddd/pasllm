@@ -1435,7 +1435,7 @@ FP32        gauss σ≈3.52563  r=1.000000  slope=1.000000  |slope-1|=0  |b|=0  
 * **SIMD-friendly inner loop (Q42NL/Q43NL):** nibble-unpack → int8→f32 → multiply by $1/7$ → apply **$h(x,c) = (1-c)x + cx|x|$** with per-block $c$ → scale multiply.
 * **LUT option:** You can replace $f(x)$ or $h(x,c)$ with a small **signed-q** LUT (15 entries) to avoid transcendental ops.
 * **Scaling:** Absmax per block matched the baselines here. Per-channel/row variants are trivial if your kernels support them.
-* **Q42NL/Q43NL curve optimization:** Grid search over 255 candidate $c$ values (quantized to int8 range). See `tools/Q43NL_METHODS_GUIDE.md` for gradient and coarse-to-fine optimization methods.
+* **Curve optimization:** Q42NL uses grid search over 255 candidate $c$ values (quantized to int8 range). Q43NL uses exhaustive search over all valid FP16 values in [-1,1] (~32K candidates excluding NaN/Inf) for optimal quality.
 
 ---
 

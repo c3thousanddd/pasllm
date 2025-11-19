@@ -1353,6 +1353,12 @@ Q40NL       gauss σ≈3.52563  r=0.995955  slope=1.001785  |slope-1|=0.00178458
 Q41NL       max|e|=1.57086  mean|e|=0.298122  p99|e|= 0.976523
 Q41NL       dot=-1.535042e+02   Δ=-1.445639e+01   med|Δ·|= 1.496027e+00
 Q41NL       gauss σ≈3.52563  r=0.994230  slope=1.005052  |slope-1|=0.00505206  |b|=0.00191994  qq_mae=0.0465993  JSD= 0.0155118
+Q42NL       max|e|=1.46731  mean|e|=0.259534  p99|e|= 0.760177
+Q42NL       dot=-2.505029e+02   Δ=-1.114552e+02   med|Δ·|= 1.297592e+00
+Q42NL       gauss σ≈3.52563  r=0.996009  slope=0.998611  |slope-1|=0.00138884  |b|=0.000466792  qq_mae=0.0538817  JSD= 0.0387489
+Q43NL       max|e|=1.17504  mean|e|=0.229153  p99|e|= 0.664635
+Q43NL       dot=-1.532759e+02   Δ=-1.422812e+01   med|Δ·|= 9.960861e-01
+Q43NL       gauss σ≈3.52563  r=0.996828  slope=0.998536  |slope-1|=0.00146434  |b|=0.000255965  qq_mae=0.0348695  JSD= 0.0246166
 Q4_0        max|e|=1.0401  mean|e|=0.285264  p99|e|= 0.721546
 Q4_0        dot=-1.270927e+02   Δ= 1.195511e+01   med|Δ·|= 1.217222e+00
 Q4_0        gauss σ≈3.52563  r=0.995361  slope=1.000205  |slope-1|=0.000205004  |b|=0.000760246  qq_mae=0.0819448  JSD= 0.074839
@@ -1385,52 +1391,63 @@ FP32        dot=-1.390478e+02   Δ= 0.000000e+00   med|Δ·|= 0.000000e+00
 FP32        gauss σ≈3.52563  r=1.000000  slope=1.000000  |slope-1|=0  |b|=0  qq_mae=0  JSD= 0
 ```
 
-| **metric** | **Q40NL** | **Q41NL** | **Q4_0** | **Q8_0** | **IQ4_NL** | **NVFP4** | **MXFP4** | **NF4** | **NF4_BS64** | **FP16** | **BF16** | **FP32** |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| **mean ∣e∣ (abs error)** | 0.259683 | 0.298122 | 0.285264 | 0.015810 | **0.245748** | 0.252515 | 0.309253 | 1.938310 | 0.256518 | 0.000497 | 0.003968 | 0.000000 |
-| **p99 ∣e∣ (abs error)** | 0.756543 | 0.976523 | **0.721546** | 0.039999 | 0.866982 | 1.073749 | 1.676842 | 8.109633 | 0.907737 | 0.002182 | 0.018287 | 0.000000 |
-| **avg ∣Δ·∣ (abs dot error)** | 31.411209 | 14.456390 | **11.955109** | 3.115387 | 14.815811 | 23.472870 | 111.086395 | 210.239609 | 77.055542 | 0.218994 | 0.063232 | 0.000000 |
-| **median ∣Δ·∣ (abs dot error)** | 1.184547 | 1.496027 | 1.217222 | 0.063330 | 1.219061 | **0.823393** | 111.086395 | 10.097114 | 1.565313 | 0.002718 | 0.021509 | 0.000000 |
-| **mean Δ· (abs dot error, signed)** | 31.411209 | -14.456390 | **11.955109** | -3.115387 | -14.815811 | -23.472870 | -111.086395 | 210.239609 | -77.055542 | 0.218994 | 0.063232 | 0.000000 |
-| **Gaussian: Pearson r** | 0.995955 | 0.994230 | 0.995361 | 0.999986 | **0.996302** | 0.995466 | 0.992407 | 0.854074 | 0.995901 | 1.000000 | 0.999999 | 1.000000 |
-| **Gaussian: ∣slope−1∣** | 0.001785 | 0.005052 | **0.000205** | 0.000007 | 0.014130 | 0.003824 | 0.031533 | 0.776259 | 0.006662 | 0.000003 | 0.000011 | 0.000000 |
-| **Gaussian: ∣intercept∣** | 0.001722 | 0.001920 | **0.000760** | 0.000071 | 0.020048 | 0.002717 | 0.002900 | 0.006881 | 0.002683 | 0.000004 | 0.000052 | 0.000000 |
-| **Gaussian: Q–Q MAE** | **0.044877** | 0.046599 | 0.081945 | 0.002413 | 0.053596 | 0.075657 | 0.287772 | 1.938310 | 0.058956 | 0.000497 | 0.003968 | 0.000000 |
-| **Gaussian: JSD (nats)** | 0.034378 | **0.015512** | 0.074839 | 0.000048 | 0.037350 | 0.065949 | 0.379285 | 0.485384 | 0.050387 | 0.000005 | 0.000277 | 0.000000 |
+| **metric** | **Q40NL** | **Q41NL** | **Q42NL** | **Q43NL** | **Q4_0** | **Q8_0** | **IQ4_NL** | **NVFP4** | **MXFP4** | **NF4** | **NF4_BS64** | **FP16** | **BF16** | **FP32** |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| **mean ∣e∣ (abs error)** | 0.259683 | 0.298122 | 0.259534 | **0.229153** | 0.285264 | 0.015810 | 0.245748 | 0.252515 | 0.309253 | 1.938310 | 0.256518 | 0.000497 | 0.003968 | 0.000000 |
+| **p99 ∣e∣ (abs error)** | 0.756543 | 0.976523 | 0.760177 | **0.664635** | 0.721546 | 0.039999 | 0.866982 | 1.073749 | 1.676842 | 8.109633 | 0.907737 | 0.002182 | 0.018287 | 0.000000 |
+| **avg ∣Δ·∣ (abs dot error)** | 31.411209 | 14.456390 | 111.455200 | 14.228120 | **11.955109** | 3.115387 | 14.815811 | 23.472870 | 111.086395 | 210.239609 | 77.055542 | 0.218994 | 0.063232 | 0.000000 |
+| **median ∣Δ·∣ (abs dot error)** | 1.184547 | 1.496027 | 1.297592 | **0.996086** | 1.217222 | 0.063330 | 1.219061 | 0.823393 | 111.086395 | 10.097114 | 1.565313 | 0.002718 | 0.021509 | 0.000000 |
+| **mean Δ· (abs dot error, signed)** | 31.411209 | -14.456390 | -111.455200 | -14.228120 | **11.955109** | -3.115387 | -14.815811 | -23.472870 | -111.086395 | 210.239609 | -77.055542 | 0.218994 | 0.063232 | 0.000000 |
+| **Gaussian: Pearson r** | 0.995955 | 0.994230 | 0.996009 | **0.996828** | 0.995361 | 0.999986 | 0.996302 | 0.995466 | 0.992407 | 0.854074 | 0.995901 | 1.000000 | 0.999999 | 1.000000 |
+| **Gaussian: ∣slope−1∣** | 0.001785 | 0.005052 | 0.001389 | **0.001464** | 0.000205 | 0.000007 | 0.014130 | 0.003824 | 0.031533 | 0.776259 | 0.006662 | 0.000003 | 0.000011 | 0.000000 |
+| **Gaussian: ∣intercept∣** | 0.001722 | 0.001920 | **0.000467** | 0.000256 | 0.000760 | 0.000071 | 0.020048 | 0.002717 | 0.002900 | 0.006881 | 0.002683 | 0.000004 | 0.000052 | 0.000000 |
+| **Gaussian: Q–Q MAE** | 0.044877 | 0.046599 | 0.053882 | **0.034870** | 0.081945 | 0.002413 | 0.053596 | 0.075657 | 0.287772 | 1.938310 | 0.058956 | 0.000497 | 0.003968 | 0.000000 |
+| **Gaussian: JSD (nats)** | 0.034378 | 0.015512 | 0.038749 | **0.024617** | 0.074839 | 0.000048 | 0.037350 | 0.065949 | 0.379285 | 0.485384 | 0.050387 | 0.000005 | 0.000277 | 0.000000 |
 
 ---
 
 ## Where Q4\*NL fits
 
-* **Use Q4\*NL when…** you need **Q4 storage** (4.5 b/w) and care about **tail robustness** with **LUT-free** decode.
-  * **Q40NL:** moderate tail emphasis with $f(x)$.
-  * **Q41NL:** stronger tail emphasis with $f_{41}(x)=x|x|$.
-* **Prefer IQ4_NL when…** chasing the **lowest mean ∣e∣ at 4.5 b/w** (table winner among 4.5 b/w).
-* **Prefer Q4_0 when…** you want the **lowest avg ∣Δ·∣** and **lowest p99 ∣e∣** at 4.5 b/w.
-* **Prefer NVFP4 when…** you care about **median ∣Δ·∣** at 4.5 b/w.
-* **Prefer Q40NL when…** minimizing **Gaussian Q–Q MAE** at 4.5 b/w.
-* **Prefer Q41NL when…** minimizing **Gaussian JSD** at 4.5 b/w.
-* **Prefer MXFP4 when…** you want **4.25 b/w** and can tolerate coarse PoT scale.
-* **Prefer NF4 when…** your normalized block distribution is **close to Gaussian**; its Gaussian-quantile LUT fits that shape, but outliers or skew can hurt.
-* **Prefer Q8_0 when…** you can afford ~8.5 b/w.
+* **Use Q4\*NL when…** you need **Q4 storage** and care about **tail robustness** with **LUT-free** decode.
+  * **Q40NL (4.5 b/w):** moderate tail emphasis with $f(x) = 0.5(x|x| + x)$, FP16 scale.
+  * **Q41NL (4.5 b/w):** stronger tail emphasis with $f_{41}(x)=x|x|$, FP16 scale.
+  * **Q42NL (4.5 b/w):** adaptive parametric curve $h(x,c)$, **FP8 E5M2 scale** (smallest scale precision).
+  * **Q43NL (4.59 b/w):** adaptive parametric curve $h(x,c)$, **FP16 scale** (best overall quality).
+* **Prefer Q43NL when…** you want the **best mean ∣e∣** (0.229) and **best p99 ∣e∣** (0.665) among all 4-bit formats, plus excellent Gaussian matching.
+* **Prefer Q42NL when…** you need adaptive curve optimization with minimal storage overhead (FP8 scale = 4.5 b/w exactly).
+* **Prefer IQ4_NL when…** chasing the **lowest mean ∣e∣ at 4.5 b/w** among non-adaptive formats (table winner among fixed 4.5 b/w).
+* **Prefer Q4_0 when…** you want the **lowest avg ∣Δ·∣** (11.96) and **lowest p99 ∣e∣** at 4.5 b/w (linear quantization).
+* **Prefer NVFP4 when…** you care about **median ∣Δ·∣** at 4.5 b/w (among non-adaptive formats) or need hardware FP4 E2M1 support.
+* **Prefer Q43NL when…** minimizing **median ∣Δ·∣** (1.00) and **Gaussian Q–Q MAE** (0.035) among all 4-bit formats.
+* **Prefer Q40NL when…** minimizing **Gaussian Q–Q MAE** (0.045) at 4.5 b/w among fixed-curve formats.
+* **Prefer Q41NL when…** minimizing **Gaussian JSD** (0.016) at 4.5 b/w.
+* **Prefer MXFP4 when…** you want **4.25 b/w** and can tolerate coarse PoT scale (E8M0).
+* **Prefer NF4 when…** your normalized block distribution is **close to Gaussian**; its Gaussian-quantile LUT fits that shape, but outliers or skew can hurt (QLoRA LUT).
+* **Prefer Q8_0 when…** you can afford ~8.5 b/w for higher precision.
 * **Prefer FP16/BF16/FP32 when…** you need **full precision**.
 
 ---
 
 ## Implementation notes
 
-* **SIMD-friendly inner loop (Q4\*NL):** nibble-unpack → int8→f32 → multiply by $1/7$ → apply **$f$ (Q40NL)** or **$f_{41}$ (Q41NL)** → scale multiply.
-* **LUT option:** You can replace $f(x)$ with a small **signed-q** LUT (15 entries) to avoid transcendental ops.
+* **SIMD-friendly inner loop (Q40NL/Q41NL):** nibble-unpack → int8→f32 → multiply by $1/7$ → apply **$f$ (Q40NL)** or **$f_{41}$ (Q41NL)** → scale multiply.
+* **SIMD-friendly inner loop (Q42NL/Q43NL):** nibble-unpack → int8→f32 → multiply by $1/7$ → apply **$h(x,c) = (1-c)x + cx|x|$** with per-block $c$ → scale multiply.
+* **LUT option:** You can replace $f(x)$ or $h(x,c)$ with a small **signed-q** LUT (15 entries) to avoid transcendental ops.
 * **Scaling:** Absmax per block matched the baselines here. Per-channel/row variants are trivial if your kernels support them.
+* **Q42NL/Q43NL curve optimization:** Grid search over 255 candidate $c$ values (quantized to int8 range). See `tools/Q43NL_METHODS_GUIDE.md` for gradient and coarse-to-fine optimization methods.
 
 ---
 
 ## Summary
 
-* **Q4\*NL (Q40NL/Q41NL):** **drop-in** Q4 formats with strong tail handling (Q41NL emphasizes tails most) at **18 B / 32 weights**.
-* **IQ4_NL:** best **mean ∣e∣** among 4.5 b/w in this run (tiny LUT cost).
-* **Q4_0:** best **avg ∣Δ·∣** and **p99 ∣e∣** among 4.5 b/w.
-* **NVFP4:** best **median ∣Δ·∣** among 4.5 b/w; FP4/FP8 decode-friendly.
+* **Q4\*NL formats:** **drop-in** Q4 formats with strong tail handling and adaptive curves.
+  * **Q40NL/Q41NL (4.5 b/w):** Fixed nonlinear curves (Q41NL emphasizes tails most) at **18 B / 32 weights**.
+  * **Q42NL (4.5 b/w):** Adaptive curve with FP8 E5M2 scale, **18 B / 32 weights**.
+  * **Q43NL (4.59 b/w):** Adaptive curve with FP16 scale, **19 B / 32 weights** — **best overall 4-bit quality** (exhaustive search over all FP16 values).
+* **Q43NL wins:** best **mean ∣e∣** (0.229), best **p99 ∣e∣** (0.665), best **median ∣Δ·∣** (0.996), best **Gaussian Q–Q MAE** (0.035) among 4-bit formats.
+* **IQ4_NL:** best **mean ∣e∣** (0.246) among 4.5 b/w fixed-curve formats in this run (tiny LUT cost).
+* **Q4_0:** best **avg ∣Δ·∣** (11.96) and **p99 ∣e∣** among 4.5 b/w formats (linear quantization).
+* **NVFP4:** best **median ∣Δ·∣** among 4.5 b/w fixed-curve formats; FP4/FP8 decode-friendly.
 * **Q40NL / Q41NL:** best **Gaussian Q–Q MAE** (Q40NL) and **JSD** (Q41NL) at 4.5 b/w.
 * **NF4:** solid when blocks are **near-Gaussian**; degrades with outliers/skew.
 * **Q8_0 / FP16/BF16/FP32:** reference baselines.

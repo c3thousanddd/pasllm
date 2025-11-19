@@ -11,6 +11,9 @@ if [[ "$1" == "--dry-run" ]]; then
     DRY_RUN=1
 fi
 
+# Get current directory
+ORIGINAL_DIR=$(pwd)
+
 # Define source and destination directories (relative to script location)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SOURCE_DIR="$SCRIPT_DIR"
@@ -100,6 +103,14 @@ if [[ $DRY_RUN -eq 1 ]]; then
 else
     echo "${BLUE}=== Sync Complete ===${NC}"
     echo "${GREEN}Synced: $synced_count files${NC}"
+
+    # Commit changes if any files were synced
+    if [[ $synced_count -gt 0 ]]; then
+        cd "$DEST_DIR" || { echo "${RED}Failed to cd to destination for git commit${NC}"; exit 1; }
+        git commit -am "Sync updated files from pasllm source" || { echo "${RED}No changes to commit${NC}"; }
+        git push || { echo "${RED}Failed to push changes to remote${NC}"; exit 1; }
+    fi
+
 fi
 if [[ $uptodate_count -gt 0 ]]; then
     echo "${GREEN}Up-to-date: $uptodate_count files${NC}"
@@ -107,3 +118,6 @@ fi
 if [[ $skipped_count -gt 0 ]]; then
     echo "${YELLOW}Skipped: $skipped_count files (not found in source)${NC}"
 fi
+
+# Return to original directory
+cd "$ORIGINAL_DIR" || { echo "${RED}Failed to return to original directory${NC}"; exit 1; }

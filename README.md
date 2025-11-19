@@ -30,7 +30,7 @@ These formats achieve 99.5-99.97% of full precision quality while maintaining co
 
 ## Supported Models
 
-PasLLM includes pre-quantized models in the `bin/models/` directory:
+Pre-quantized models are available at [https://mega.nz/folder/krcgHCpZ#0tjLqup_Hc4THWC9itDrTg](https://mega.nz/folder/krcgHCpZ#0tjLqup_Hc4THWC9itDrTg), which must be placed in the `bin/models/` directory. Supported architectures include: 
 
 - **Llama** - 3/3.1/3.2 (1B, 3B, 8B variants, including abliterated/uncensored)
 - **Qwen 2.5** - 0.5B, 1.5B, 3B, 7B Instruct

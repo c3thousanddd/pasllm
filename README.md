@@ -25,8 +25,13 @@ PasLLM implements several custom 4-bit and 8-bit quantization formats designed f
 - **Q41NL** - Alternative non-linearity with increased tail emphasis
 - **Q42NL** - Enhanced variant with improved reconstruction
 - **Q43NL** - Advanced format with multiple optimization methods (gradient, coarse-fine, grid)
-- **Q80** - 8-bit quantization for higher quality
+- **Q40** - 4 bits/weight standard quantization (matches llama.cpp Q4_0 quality)
+- **Q80** - 8-bit quantization for higher quality (matches llama.cpp Q8_0 quality)
+- **Q3F8** - 3x 3 bits weights + 1x 8-bit float FP8 scale per block for 4-bits/weight efficiency
 - **FP8** - 8-bit floating point support
+- **FP16** - 16-bit floating point support
+- **BF16** - Brain Floating Point 16-bit support (basically truncated 32-bit float where the lower 16 bits are cut)
+- **FP32** - Standard 32-bit floating point support (for reference and testing)
 
 These formats achieve 99.5-99.97% of full precision quality while maintaining compact model sizes.
 

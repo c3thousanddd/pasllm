@@ -93,7 +93,36 @@ Models from Hugging Face can be converted to PasLLM format using the `convert.py
 
 ```bash
 cd ${modelpath}
-python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q40nl --cpu ${pasllmbasepath}/bin/${modelname}_q40nl.safetensors
+
+# Q40NL conversion example
+python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q40nl --cpu ${pasllmbasepath}/bin/models/${modelname}_q40nl.safetensors
+
+# Q41NL conversion example
+python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q41nl --cpu ${pasllmbasepath}/bin/models/${modelname}_q41nl.safetensors 
+
+# Q42NL conversion example
+python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q42nl --cpu ${pasllmbasepath}/bin/models/${modelname}_q42nl.safetensors
+
+# Q43NL conversion example
+python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q43nl --cpu ${pasllmbasepath}/bin/models/${modelname}_q43nl.safetensors
+
+# Q40 conversion example
+python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q40 --cpu ${pasllmbasepath}/bin/models/${modelname}_q40.safetensors
+
+# Q80 conversion example
+python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q80 --cpu ${pasllmbasepath}/bin/models/${modelname}_q80.safetensors
+
+# Q3F8 conversion example
+python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q3f8 --cpu ${pasllmbasepath}/bin/models/${modelname}_q3f8.safetensors
+
+# FP8 conversion example
+python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype fp8 --cpu ${pasllmbasepath}/bin/models/${modelname}_fp8.safetensors
+
+# FP16 conversion example
+python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype fp16 --cpu ${pasllmbasepath}/bin/models/${modelname}_fp16.safetensors
+
+# and so on for BF16 and FP32...
+
 ```
 
 ## Documentation

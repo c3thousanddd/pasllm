@@ -58,7 +58,7 @@ Pre-quantized models are available at [https://mega.nz/folder/krcgHCpZ#0tjLqup_H
 
 ```bash
 # Run inference with a quantized model
-./bin/pasllmcli -model bin/models/qwen2.5_0.5b_instruct_q40nl.safetensors
+./bin/pasllmcli -model=bin/models/qwen2.5_0.5b_instruct_q40nl.safetensors
 ```
 
 ### Building from Source

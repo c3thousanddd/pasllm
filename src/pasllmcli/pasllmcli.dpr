@@ -75,6 +75,7 @@ type { TPasLLMCLIInstance }
      end;
 
 constructor TPasLLMCLIInstance.Create;
+var TestModel:TPasLLMUTF8String;
 begin
  inherited Create;
  fPasMPInstance:=TPasMP.CreateGlobalInstance;
@@ -102,10 +103,14 @@ begin
 //fModel:='qwen3_4b_instruct_q40nl.safetensors';
  end;
  if not FileExists(fModel) then begin
-  fModel:=IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0)))+fModel;
-  if not FileExists(fModel) then begin
-   fModel:=IncludeTrailingPathDelimiter(IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0)))+'models')+fModel;
-   if not FileExists(fModel) then begin
+  TestModel:=IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0)))+fModel;
+  if FileExists(TestModel) then begin
+   fModel:=TestModel;
+  end else begin
+   TestModel:=IncludeTrailingPathDelimiter(IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0)))+'models')+fModel;
+   if FileExists(TestModel) then begin
+    fModel:=TestModel;
+   end else begin
     raise Exception.Create('Model file not found: '+ExtractFileName(fModel));
    end;
   end;

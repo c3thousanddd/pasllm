@@ -87,6 +87,15 @@ docs/
   └── quant_4bit_formats.md   # Detailed format specifications
 ```
 
+## Conversion of Models
+
+Models from Hugging Face can be converted to PasLLM format using the `convert.py` script in the `tools/` directory. Example usage:
+
+```bash
+cd ${modelpath}
+python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q40nl --cpu ${pasllmbasepath}/bin/${modelname}_q40nl.safetensors
+```
+
 ## Documentation
 
 - [4-bit Quantization Formats](docs/quant_4bit_formats.md) - Complete specification of Q4*NL formats

